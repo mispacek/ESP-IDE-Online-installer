@@ -7,6 +7,12 @@
       "parts": [
         { "path": "img_esp32_v1_9_0___1_20_0.bin", "offset": 0 }
       ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "img_esp32c3_v1_9_1___1_20_0.bin", "offset": 0 }
+      ]
     }
   ]
 }

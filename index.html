@@ -46,26 +46,6 @@
         button:hover {
             background-color: #0056b3;
         }
-
-        td {
-            padding: 8px;
-            border-bottom: 1px solid #ccc;
-        }
-        .radios li {
-            list-style: none;
-            line-height: 2em;
-        }
-
-        .invisible {
-            visibility: hidden;
-        }
-        
-        .hidden {
-            display: none;
-        }
-            esp-web-install-button[install-unsupported] {
-            visibility: inherit;
-        }
     </style>
 </head>
 <body>
@@ -75,20 +55,11 @@
 </header>
 
 <main>
-    <h2>Vyberte do jakého modulu ESP chcete naše IDE nainstalovat</h2>
+    <h2>Instalátor ESP IDE do ESP32 modulu</h2>
     <p>Před instalací je potřeba dostat ESP do Boot módu. To provedete stisknutím a držením tlačítka BOOT při současném stiknutím tlačítka RESET. ESP se zrestartuje do BOOT módu a je připraveno na nahrání nového programu.</p>
-    <p>Jaké je vaše ESP?</p>
-      <ul class="radios">
-        <li>
-          <label><input type="radio" name="type" value="esp32" /> ESP32</label>
-        </li>
-        <li>
-          <label><input type="radio" name="type" value="esp32c3" /> ESP32C3</label>
-        </li>
-      </ul>
-      <p class="button-row" align="center">
-        <esp-web-install-button class="invisible"></esp-web-install-button>
-      </p>
+    <p class="button-row" align="center">
+      <esp-web-install-button  manifest="manifest.json"></esp-web-install-button>
+    </p>
 
     
 </main>
@@ -96,15 +67,5 @@
 <footer>
     <p>&copy; 2024 Milan Špaček</p>
 </footer>
- 
- <script>
-      document.querySelectorAll('input[name="type"]').forEach(radio =>
-        radio.addEventListener("change", () => {
-          const button = document.querySelector('esp-web-install-button');
-          button.manifest = `./manifest_${radio.value}.json`;
-          button.classList.remove('invisible');
-        }
-      ));
-    </script>
 </body>
 </html>
