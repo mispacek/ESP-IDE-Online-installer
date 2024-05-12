@@ -1,0 +1,12 @@
+{
+  "name": "ESP IDE pro ESP32",
+  "version": "1.9",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "img_esp32_v1_9_0___1_20_0.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
