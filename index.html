@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moje HTML stránka</title>
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <title>Instalátor ESP32 IDE</title>
+    <script src="install-button.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,6 +46,11 @@
         button:hover {
             background-color: #0056b3;
         }
+        
+        div.form1 {
+          width: 800px;
+          margin: auto;
+        }
     </style>
 </head>
 <body>
@@ -54,15 +59,18 @@
     <h1>Online Instalátor ESP IDE</h1>
 </header>
 
+
 <main>
+    <div class="form1">
     <h2>Instalátor ESP IDE do ESP32 modulu</h2>
-    <p>Před instalací je potřeba dostat ESP do Boot módu. To provedete stisknutím a držením tlačítka BOOT při současném stiknutím tlačítka RESET. ESP se zrestartuje do BOOT módu a je připraveno na nahrání nového programu.</p>
+    <p>Před instalací je potřeba dostat <b>ESP do Boot módu</b>.<br> To provedete stisknutím a <b>držením tlačítka BOOT při současném stiknutím tlačítka RESET</b>.<br> ESP se zrestartuje do BOOT módu a je připraveno na nahrání nového programu.</p>
     <p class="button-row" align="center">
       <esp-web-install-button  manifest="manifest.json"></esp-web-install-button>
     </p>
-
-    
+    </div>
 </main>
+
+
 
 <footer>
     <p>&copy; 2024 Milan Špaček</p>

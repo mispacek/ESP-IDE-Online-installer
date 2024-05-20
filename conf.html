@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="sweetalert2.min.css">
+    <title>ESP IDE konfigurátor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: auto;
+            padding: 20px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        header, footer {
+            background-color: #222;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        main {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            transition-duration: 0.4s;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="number"] {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        div.form1 {
+          width: 600px;
+          margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Online konfigurátor ESP IDE </h1>
+</header>
+
+<main>
+    
+    <div class="form1">
+    <h2>Konfigurace ESP IDE</h2>
+    <p>Před samotnou konfigurací prosím restartujte ESP</p>
+    
+    <form id="networkForm">
+        <fieldset>
+            <legend>Název desky</legend>
+            
+            <label for="hostname">Hostname:</label>
+            <input type="text" id="hostname" name="hostname" required>
+            
+        </fieldset>
+        
+        <br>
+        
+        <fieldset>
+            <legend>Nastavení WiFi Sítě</legend>
+
+            <label for="ssid1">SSID 1:</label>
+            <input type="text" id="ssid1" name="ssid1" required>
+
+            <label for="password1">Heslo 1:</label>
+            <input type="password" id="password1" name="password1" required>
+            
+            <br>
+
+            <label for="ssid2">SSID 2:</label>
+            <input type="text" id="ssid2" name="ssid2">
+
+            <label for="password2">Heslo 2:</label>
+            <input type="password" id="password2" name="password2">
+
+            <br>
+
+            <label for="ssid3">SSID 3:</label>
+            <input type="text" id="ssid3" name="ssid3">
+
+            <label for="password3">Heslo 3:</label>
+            <input type="password" id="password3" name="password3">
+
+            <br>
+
+            <label for="ssid4">SSID 4:</label>
+            <input type="text" id="ssid4" name="ssid4">
+
+            <label for="password4">Heslo 4:</label>
+            <input type="password" id="password4" name="password4">
+        </fieldset>
+        
+        <br>
+
+        <fieldset>
+            <legend>Nastavení OLED displaye</legend>
+
+            <label for="i2c1">PIN pro SDA:</label>
+            <input type="number" id="i2c_SDA" name="i2c1" required>
+
+            <br>
+
+            <label for="i2c2">PIN pro SCL:</label>
+            <input type="number" id="i2c_SCL" name="i2c2" required>
+        </fieldset>
+        
+        
+        <button id="connect">Uložit nastavení do ESP</button>
+    
+    </form>
+    
+    
+    
+    
+    
+    
+    </div>
+    
+</main>
+
+<footer>
+    <p>&copy; 2024 Milan Špaček</p>
+</footer>
+
+<script>
+        let port;
+        let reader;
+        let writer;
+        let cmd_save_wifi;
+        let in_data = ""
+        let global_buffer = "";
+        
+        
+        
+        function findLineWithText(text, searchText) {
+            // Rozdělí text na jednotlivé řádky
+            const lines = text.split('\n');
+
+            // Prochází všechny řádky a hledá zvolený text
+            for (let line of lines) {
+                const index = line.indexOf(searchText);
+                if (index !== -1) {
+                    // Pokud je nalezen zvolený text, vrátí zbytek řádku po zvoleném textu
+                    return line.slice(index + searchText.length);
+                }
+            }
+
+            // Pokud není zvolený text nalezen, vrátí prázdný řetězec
+            return '';
+        }
+
+        
+        
+        
+        function escapeRegExp(string) {
+          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+        }
+        
+        function delete_non_ascii(in_string) {
+            sdiak="ÁÂÄĄáâäąČčĆćÇçĈĉĎĐďđÉÉĚËĒĖĘéěëēėęĜĝĞğĠġĢģĤĥĦħÍÎíîĨĩĪīĬĭĮįİıĴĵĶķĸĹĺĻļĿŀŁłĹĽĺľŇŃŅŊŋņňńŉÓÖÔŐØŌōóöőôøŘřŔŕŖŗŠšŚśŜŝŞşŢţŤťŦŧŨũŪūŬŭŮůŰűÚÜúüűŲųŴŵÝYŶŷýyŽžŹźŻżß";
+            bdiak="AAAAaaaaCcCcCcCcDDddEEEEEEEeeeeeeGgGgGgGgHhHhIIiiIiIiIiIiIiJjKkkLlLlLlLlLLllNNNNnnnnnOOOOOOooooooRrRrRrSsSsSsSsTtTtTtUuUuUuUuUuUUuuuUuWwYYYyyyZzZzZzs";
+
+            tx=""; txt=in_string;
+
+            for(p=0;p<txt.length;p++)
+            {
+                if (sdiak.indexOf(txt.charAt(p))!=-1)
+                {
+                    tx+=bdiak.charAt(sdiak.indexOf(txt.charAt(p)));
+                }	
+                else 
+                {
+                    tx+=txt.charAt(p);
+                }
+            }
+            
+          return tx.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '');
+        }
+        
+        function nahraditNepovoleneZnaky(retězec) {
+            // Definice regulárního výrazu, který odpovídá všem znakům mimo povolené množiny
+            var povoleneZnaky = /[^\w\-._~!*();:@&=+$,\/?%#[\]]/g;
+
+            // Nahrazení všech znaků, které neodpovídají povoleným, znakem podtržítko
+            return retězec.replace(povoleneZnaky, '_');
+        }
+
+        function replaceAll(str, find, replace) {
+            return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+        }
+        
+        
+
+        document.getElementById('connect').addEventListener('click', async () => {
+        event.preventDefault();
+
+        
+        Swal.fire({
+          title: "Restartujte prosím ESP",
+          text: "Restartujte prosím vaše ESP a poté vyberte správný sériový.",
+          icon: "warning",
+          showConfirmButton: false,
+        });
+            
+        
+        let SSID1 = document.getElementById('ssid1').value;
+        let SSID2 = document.getElementById('ssid2').value;
+        let SSID3 = document.getElementById('ssid3').value;
+        let SSID4 = document.getElementById('ssid4').value;
+        
+        let PASS1 = document.getElementById('password1').value;
+        let PASS2 = document.getElementById('password2').value;
+        let PASS3 = document.getElementById('password3').value;
+        let PASS4 = document.getElementById('password4').value;
+        
+        let HOSTNAME = document.getElementById('hostname').value;
+        
+        let SDA = document.getElementById('i2c_SDA').value;
+        let SCL = document.getElementById('i2c_SCL').value;
+        
+        
+        
+        
+        HOSTNAME = delete_non_ascii(HOSTNAME);
+        HOSTNAME = nahraditNepovoleneZnaky(HOSTNAME);
+        HOSTNAME = replaceAll(HOSTNAME, " ","_");
+        document.getElementById('hostname').value = HOSTNAME
+        
+        
+        
+        SSID1 = delete_non_ascii(SSID1);
+        SSID1 = nahraditNepovoleneZnaky(SSID1);
+        SSID1 = replaceAll(SSID1, " ","_");
+        document.getElementById('ssid1').value = SSID1
+        
+        SSID2 = delete_non_ascii(SSID2);
+        SSID2 = nahraditNepovoleneZnaky(SSID2);
+        SSID2 = replaceAll(SSID2, " ","_");
+        document.getElementById('ssid2').value = SSID2
+        
+        SSID3 = delete_non_ascii(SSID3);
+        SSID3 = nahraditNepovoleneZnaky(SSID3);
+        SSID3 = replaceAll(SSID3, " ","_");
+        document.getElementById('ssid3').value = SSID3
+        
+        SSID4 = delete_non_ascii(SSID4);
+        SSID4 = nahraditNepovoleneZnaky(SSID4);
+        SSID4 = replaceAll(SSID4, " ","_");
+        document.getElementById('ssid4').value = SSID4
+        
+        
+        
+        
+        PASS1 = delete_non_ascii(PASS1);
+        PASS1 = nahraditNepovoleneZnaky(PASS1);
+        PASS1 = replaceAll(PASS1, " ","_");
+        document.getElementById('password1').value = PASS1
+        
+        PASS2 = delete_non_ascii(PASS2);
+        PASS2 = nahraditNepovoleneZnaky(PASS2);
+        PASS2 = replaceAll(PASS2, " ","_");
+        document.getElementById('password2').value = PASS2
+        
+        PASS3 = delete_non_ascii(PASS3);
+        PASS3 = nahraditNepovoleneZnaky(PASS3);
+        PASS3 = replaceAll(PASS3, " ","_");
+        document.getElementById('password3').value = PASS3
+        
+        PASS4 = delete_non_ascii(PASS4);
+        PASS4 = nahraditNepovoleneZnaky(PASS4);
+        PASS4 = replaceAll(PASS4, " ","_");
+        document.getElementById('password4').value = PASS4
+        
+        
+        let wifi_str = "";
+        
+        //SSID1 + ";" + PASS1 + "\\r" + SSID2 + ";" + PASS2 + "\\r" + SSID3 + ";" + PASS3 + "\\r" + SSID4 + ";" + PASS4 + "\\r"
+        
+        if (SSID1.length > 0)
+        {
+            wifi_str = wifi_str + SSID1 + ";" + PASS1 + "\\r";
+        }
+        
+        if (SSID2.length > 0)
+        {
+            wifi_str = wifi_str + SSID2 + ";" + PASS2 + "\\r";
+        }
+        
+        if (SSID3.length > 0)
+        {
+            wifi_str = wifi_str + SSID3 + ";" + PASS3 + "\\r";
+        }
+        
+        if (SSID4.length > 0)
+        {
+            wifi_str = wifi_str + SSID4 + ";" + PASS4 + "\\r";
+        }
+        
+        
+        
+        console.log(cmd_save_wifi);
+        
+        async function connectSerial() {
+            // Request a port and open a connection
+            const port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+
+            // Create a reader to read data from the serial port
+            const reader = port.readable.getReader();
+            
+            // Create a writer to send data to the serial port
+            const writer = port.writable.getWriter();
+
+            // Function to send carriage return to Micropython REPL
+            async function sendCarriageReturn() {
+                const encoder = new TextEncoder();
+                const data = encoder.encode('\r');
+                await writer.write(data);
+                console.log("novy radek");
+            }
+
+            // Function to read data until we get the Micropython REPL prompt (>>>)
+            async function waitForPrompt() {
+                let buffer = '';
+                let promptDetected = false;
+
+                // Loop to send '\r' every 500ms until the prompt is detected
+                while (!promptDetected) {
+                    await sendCarriageReturn();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    // Read data from the serial port
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+
+                    if (value) {
+                        buffer += new TextDecoder().decode(value);
+                        buffer = buffer.replaceAll('\r\n', '\n');
+                        global_buffer = buffer;
+                        console.log(buffer);
+                        if (buffer.includes('>>> \n>>> \n>>> \n')) {
+                            console.log('Connected to Micropython REPL');
+                            promptDetected = true;
+                        }
+                    }
+                }
+            }
+
+            Swal.fire({
+              title: 'Ukládám nastavení...',
+              icon: "info",
+              showConfirmButton: false,
+              onBeforeOpen () {
+                Swal.showLoading ()
+              },
+              onAfterClose () {
+                Swal.hideLoading()
+              },
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              allowEnterKey: false
+            })
+
+
+            // Wait for the REPL prompt
+            await waitForPrompt();
+            
+            Swal.update({ title: 'Komunikace s deskou navázána.', icon: "success"})
+             
+            
+           
+            
+            // Function to send a command to Micropython REPL
+            async function sendCommand(command) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(command + '\r');
+                await writer.write(data);
+            }
+            
+            
+            
+            
+            // Send a test command to Micropython REPL
+            await sendCommand("print('Ukladam hostname')");
+            
+            await sendCommand("f = open('hostname.cfg', 'w')");
+            await sendCommand("f.write('" + HOSTNAME + "')");
+            await sendCommand("f.close()");
+            
+            
+            await waitForPrompt();
+            Swal.update({ title: 'Hostname uložen.', icon: "success"})
+                       
+            
+            
+            
+            // Send a test command to Micropython REPL
+            await sendCommand("print('Ukladam nastaveni WIFI')");
+            
+            await sendCommand("f = open('wifi.cfg', 'w')");
+            await sendCommand("f.write('" + wifi_str + "')");
+            await sendCommand("f.close()");
+            
+            await waitForPrompt();
+            Swal.update({ title: 'Nastavení WiFi uloženo.', icon: "success"})
+            
+            
+            
+            
+            
+            
+            // Send a test command to Micropython REPL
+            await sendCommand("print('Ukladam nastaveni OLED')");
+            
+            await sendCommand("f = open('oled.cfg', 'w')");
+            await sendCommand("f.write('OLED_SDA=" + SDA + "\\r')");
+            await sendCommand("f.write('OLED_SCL=" + SCL + "\\r')");
+            await sendCommand("f.close()");
+            
+            await waitForPrompt();
+            Swal.update({ title: 'Nastavení OLED uloženo.', icon: "success"})
+            
+            
+            await waitForPrompt();
+            Swal.update({ title: 'Restartuji desku.', icon: "info"})
+            
+            
+            await sendCommand("reset()");
+            
+            
+            await waitForPrompt();
+            
+            
+            
+            
+            console.log(global_buffer);
+            
+            
+            let sumarizace_nastaveni = "Nastavení vašeho ESP bylo úspěšně dokončeno.<br>";
+            
+            if (global_buffer.includes("WiFi AP ssid"))
+            {
+                sumarizace_nastaveni = sumarizace_nastaveni + "Wifi je v režimu AP<br>";
+                sumarizace_nastaveni = sumarizace_nastaveni + "SSID : <b>" + findLineWithText(global_buffer, "WiFi AP ssid ") + "</b><br>";
+                sumarizace_nastaveni = sumarizace_nastaveni + "IP : <b>" + findLineWithText(global_buffer, "Web server spusten na adrese ") + "</b>";
+            }
+            
+            
+            if (global_buffer.includes("Pripojeno !"))
+            {
+                sumarizace_nastaveni = sumarizace_nastaveni + "SSID : <b>" + findLineWithText(global_buffer, "Pripojuji se k Wifi").replaceAll(".","") + "</b><br>";
+                sumarizace_nastaveni = sumarizace_nastaveni + "IP : <b>" + findLineWithText(global_buffer, "Web server spusten na adrese ") + "</b>";
+            }
+            
+            
+            
+                        
+            // Close the port
+            reader.releaseLock();
+            writer.releaseLock();
+            await port.close();
+            
+            Swal.close();
+            
+            
+            Swal.fire({
+              title: "Nastavení dokončeno",
+              html: sumarizace_nastaveni,
+              icon: "success"
+            });
+            
+        }
+
+        connectSerial().catch(err => {
+            console.error('Error:', err);
+        });
+
+
+        
+        });
+    </script>
+
+</body>
+</html>
